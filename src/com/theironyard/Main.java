@@ -1,6 +1,7 @@
 package com.theironyard;
 
 import spark.ModelAndView;
+import spark.Session;
 import spark.Spark;
 import spark.template.mustache.MustacheTemplateEngine;
 
@@ -21,6 +22,9 @@ public class Main {
         Spark.get(
                 "/",
                 ((request, response) -> {
+                    Session session = request.session();
+                    String userName = session.attribute("userName");
+
                     String replyId = request.queryParams("replyId");
                     int replyIdNum = -1;
                     if (replyId != null) {
@@ -35,9 +39,34 @@ public class Main {
                         }
                     }
                     m.put("messages", threads);
+                    m.put("userName", userName);
                     return new ModelAndView(m, "home.html");
                 }),
                 new MustacheTemplateEngine()
+        );
+        Spark.post(
+                "/login",
+                ((request, response) -> {
+                    String userName = request.queryParams("loginName");
+                    if (userName == null) {
+                        throw new Exception("Login name not found");
+                    }
+
+                    Session session = request.session();
+                    session.attribute("userName", userName);
+
+                    response.redirect("/");
+                    return "";
+                })
+        );
+        Spark.post(
+                "/logout",
+                ((request, response) -> {
+                    Session session = request.session();
+                    session.invalidate();
+                    response.redirect("/");
+                    return "";
+                })
         );
     }
 
